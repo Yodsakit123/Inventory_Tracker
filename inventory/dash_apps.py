@@ -2,69 +2,71 @@ from django_plotly_dash import DjangoDash
 from dash import dcc, html, Input, Output
 import pandas as pd
 import plotly.express as px
-
-data = {
-    'Date': pd.date_range(start='2024-01-01', periods=7).tolist() * 2,
-    'Machine': ['Machine A'] * 7 + ['Machine B'] * 7,
-    'Production': [150, 160, 145, 170, 180, 165, 175, 120, 130, 125, 140, 135, 150, 145]
-}
-df = pd.DataFrame(data)
+from inventory.models import Part
 
 app = DjangoDash('ProductionDashboard')
 
 app.layout = html.Div([
-    html.H1("Production Dashboard", style={'textAlign': 'center', 'fontFamily': 'Arial, sans-serif'}),
+    html.H1("Parts Inventory Dashboard", style={'textAlign': 'center', 'fontFamily': 'Arial, sans-serif'}),
     
     html.Div([
-        html.Label("Select Machine:", style={'fontFamily': 'Arial, sans-serif'}),
+        html.Label("Filter by Status:", style={'fontFamily': 'Arial, sans-serif'}),
         dcc.Dropdown(
-            id='machine-dropdown',
+            id='status-dropdown',
             options=[
-                {'label': 'Machine A', 'value': 'Machine A'},
-                {'label': 'Machine B', 'value': 'Machine B'},
-                {'label': 'All Machines', 'value': 'All'}
+                {'label': 'All Parts', 'value': 'All'},
+                {'label': 'In Stock', 'value': 'In Stock'},
+                {'label': 'Low', 'value': 'Low'}
             ],
-            value='Machine A', # Default value
+            value='All',
             clearable=False,
             style={'width': '300px', 'marginTop': '10px'}
         )
     ], style={'padding': '20px', 'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center'}),
     
     html.Div([
-        dcc.Graph(id='production-graph')
+        dcc.Graph(id='inventory-graph')
     ], style={'width': '80%', 'margin': '0 auto'})
 ])
 
 @app.callback(
-    Output('production-graph', 'figure'),
-    [Input('machine-dropdown', 'value')]
+    Output('inventory-graph', 'figure'),
+    [Input('status-dropdown', 'value')]
 )
-def update_graph(selected_machine):
-    if selected_machine == 'All':
-        filtered_df = df
-        title = 'Production Over Time: All Machines'
-        color = 'Machine'
-    else:
-        filtered_df = df[df['Machine'] == selected_machine]
-        title = f'Production Over Time: {selected_machine}'
-        color = None
+def update_graph(selected_status):
+    # Fetch real data inside callback so it's always up-to-date
+    part_query = Part.objects.all().values('name', 'quantity', 'status')
     
-    fig = px.line(
+    # Convert queryset to Pandas DataFrame
+    df = pd.DataFrame(list(part_query))
+    
+    # Handle empty database scenario
+    if df.empty:
+        df = pd.DataFrame(columns=['name', 'quantity', 'status'])
+        
+    # Filter by user dropdown selection
+    if selected_status != 'All' and not df.empty:
+        filtered_df = df[df['status'] == selected_status]
+        title = f'Inventory Quantities: {selected_status}'
+    else:
+        filtered_df = df
+        title = 'Inventory Quantities: All Parts'
+        
+    # Create Bar Chart instead of Line Chart (more appropriate for inventory)
+    fig = px.bar(
         filtered_df, 
-        x='Date', 
-        y='Production',
-        color=color,
+        x='name', 
+        y='quantity',
+        color='status' if not df.empty else None,
         title=title,
-        markers=True,
     )
     
     fig.update_layout(
-        xaxis_title="Date",
-        yaxis_title="Units Produced",
+        xaxis_title="Part Name",
+        yaxis_title="Quantity",
         template="plotly_white",
         title_x=0.5,
-        hovermode="x unified",
-        legend_title_text='Machine Type'
+        hovermode="x unified"
     )
     
     return fig

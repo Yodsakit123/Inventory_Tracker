@@ -33,10 +33,30 @@
         tr:hover {
             background-color: #f1f1f1;
         }
+        .btn {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .header-actions {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <h1>Factory Parts</h1>
+    <div class="header-actions">
+        <a href="{% url 'dashboard' %}" class="btn">View Dashboard</a>
+        <a href="{% url 'admin:index' %}" class="btn btn-secondary">Admin Panel</a>
+    </div>
     <table>
         <thead>
             <tr>
