@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-lyopp-9h=_+@so*h_f%j-^vr6eudw3f7t0$s9n0w!l9fngn^wu'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False   
 
 ALLOWED_HOSTS = []
 
